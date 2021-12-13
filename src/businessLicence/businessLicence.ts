@@ -1,41 +1,60 @@
-let businessLicence = (value,callback) => {
-  let reg = /[IOZSV]/;
-  if(typeof value === 'number'){
-    value += '';
+import { isValidKey } from '../utils/common';
+
+export function businessLicence (value: string, callback?: (verifyStatus: boolean, verifyLable?: string) => void): object {
+  const EXCLUDE_REG = /[IOZSV]/;
+  const verifyResult = {
+    verifyStatus: true,
+    verifyLabel: ''
+  };
+  if (!callback) {
+    callback = () => {}
   }
   if(value.length !== 15 && value.length !== 18){
+    verifyResult.verifyStatus = false;
+    verifyResult.verifyLabel = '营业执照号码位数错误';
     callback(false, '营业执照号码位数错误')
-  } else if(reg.test(value)){
+  } else if(EXCLUDE_REG.test(value)){
+    verifyResult.verifyStatus = false;
+    verifyResult.verifyLabel = '营业执照号码错误';
     callback(false, '营业执照号码错误')
   } else {
     if(value.length === 15){
-      let regNum = /^[0-9A-Z]{15}$/;
-      if(!regNum.test(value)){
+      const INCLUDE_REG = /^[0-9A-Z]{15}$/;
+      if(!INCLUDE_REG.test(value)){
+        verifyResult.verifyStatus = false;
+        verifyResult.verifyLabel = '营业执照号码错误';
         callback(false, '营业执照号码错误')
       } else if(!check15(value)){
+        verifyResult.verifyStatus = false;
+        verifyResult.verifyLabel = '营业执照号码错误';
         callback(false, '营业执照号码错误')
       } else {
          callback(true);
       }
     } else if(value.length === 18){
-      let regNum = /^[0-9A-Z]{18}$/;
-      if(!regNum.test(value)){
+      const INCLUDE_REG = /^[0-9A-Z]{18}$/;
+      if(!INCLUDE_REG.test(value)){
+        verifyResult.verifyStatus = false;
+        verifyResult.verifyLabel = '营业执照号码错误';
         callback(false, '营业执照号码错误')
       } else if(!check18(value)){
+        verifyResult.verifyStatus = false;
+        verifyResult.verifyLabel = '营业执照号码错误';
         callback(false, '营业执照号码错误')
       } else {
-         callback(true);
+        verifyResult.verifyStatus = true;
+        callback(true);
       }
     }
   }
-  function check15(value){
+
+  function check15(value: string): boolean {
    let valList = value.substring(0,14).split('');
    let result = 10;
-   let tmp = void 0;
+   let tmp = 0;
    valList.forEach((item,index) => {
-
-     item = parseInt(item);
-     tmp = (item + result)%10
+     let numberItem = parseInt(item);
+     tmp = (numberItem + result)%10
      if(tmp === 0){
        tmp = 10
      }
@@ -47,10 +66,10 @@ let businessLicence = (value,callback) => {
      return true;
    }
   };
-  function check18(value){
-    let parity = [1,3,9,27,19,26,16,17,20,29,25,13,8,24,10,30,28];
-    let resultList = [0,1,2,3,4,5,6,7,8,9,'A','B','C','D','E','F','G','H','J','K','L','M','N','P','Q','R','T','U','W','X','Y'];
-    var keyMap = {
+  function check18(value: string): boolean{
+    const parity = [1,3,9,27,19,26,16,17,20,29,25,13,8,24,10,30,28];
+    const resultList = [0,1,2,3,4,5,6,7,8,9,'A','B','C','D','E','F','G','H','J','K','L','M','N','P','Q','R','T','U','W','X','Y'];
+    const keyMap = {
       A: 10,
       B: 11,
       C: 12,
@@ -77,16 +96,19 @@ let businessLicence = (value,callback) => {
       let valList = value.substring(0,17).split('');
       let total = 0;
       let result = 0;
-      valList.forEach((item,index) => {
-        if (!/[A-Z]/.test(item)) {
-          total += item*parity[index];
+      valList.forEach((key, index) => {
+        if (!/[A-Z]/.test(key)) {
+          total += parseInt(key) * parity[index];
         } else {
-          total += keyMap[item]*parity[index];
+          let value = 0
+          if (isValidKey(key, keyMap)) {
+            value = keyMap[key]
+          }
+          total += value * parity[index];
         }
       });
       result = 31 - total % 31;
       if (result === 31) result = 0
-      /*eslint-disable*/
       if (value.substring(17) == resultList[result]) {
         return true;
       } else {
@@ -96,6 +118,5 @@ let businessLicence = (value,callback) => {
       return false
     }
   };
+  return verifyResult;
 };
-
-export default businessLicence
